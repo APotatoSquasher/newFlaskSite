@@ -1,9 +1,13 @@
-<h3>{{ stuff|title }}</h3>
-<h2>Favorite Pizza?</h2>
-{% for x in pizza_toppings %}
-    {% if x == pizza_toppings.0 %}
-        <h2>This is my fav topping!</h2>
-    {% endif %}
-    {{ x }}<br/>
-{% endfor %}
-{{ pizza_toppings.0|reverse }}
+{% extends 'base.html'%}
+
+{% block content %}
+    <h3>{{ stuff|title }}</h3>
+    <h2>Favorite Pizza?</h2>
+    {% for x in pizza_toppings %}
+        {% if x == pizza_toppings.0 %}
+            <h2>This is my fav topping!</h2>
+        {% endif %}
+        {{ x }}<br/>
+    {% endfor %}
+    {{ pizza_toppings.0|reverse }}
+{% endblock %}
