@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block content %}
+{% for message in get_flashed_messages() %} <!--Goes through all messages flashed-->
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endfor %}
+{% if name %}
+    <h1>Hello {{name}}!!</h1>
+    <br/>
+    <img src="{{ url_for('static',filename='images/mountain.jpg') }}" width=1000>
+{% else %}
+    <h1>What's Your Name?</h1>
+    <br/>
+    <form method="POST">
+        {{ form.hidden_tag() }} <!-- This makes a form. The POST is to indicate that this is something to submit-->
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control") }} <!--Creates the box and submit button below-->
+        <br/>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+{% endif %}
+{% endblock %}
