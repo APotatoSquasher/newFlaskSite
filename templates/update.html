@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+{% for message in get_flashed_messages() %} <!--Goes through all messages flashed-->
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endfor %}
+{% if name %}
+    <h1>Update User</h1>
+    <br/>
+{% else %}
+    <h1>Update User...</h1>
+    <br/>
+    <form action="/update/{{ name_to_update.id }}" method="POST">
+        {{ form.hidden_tag() }} <!-- This makes a form. The POST is to indicate that this is something to submit-->
+        {{ form.name.label(class="form-label") }}
+        {{ form.name(class="form-control", value=name_to_update.name) }} <!--Creates the box and submit button below-->
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control",value=name_to_update.email) }}
+        <br/>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+<br/><br/><br/>
+<h1>Users that have signed up</h1>
+{% for x in our_users %}
+    {{ x.id }}. {{ x.name }} - {{ x.email }} <br/>
+{% endfor %}
+{% endif %}
+{% endblock %}
