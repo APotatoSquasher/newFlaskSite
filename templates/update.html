@@ -18,13 +18,19 @@
         {{ form.name(class="form-control", value=name_to_update.name) }} <!--Creates the box and submit button below-->
         {{ form.email.label(class="form-label") }}
         {{ form.email(class="form-control",value=name_to_update.email) }}
+        {{ form.favorite_food.label(class="form-label") }}
+        {{ form.favorite_food(class="form-control", value=name_to_update.favorite_food) }}
+        {{ form.password_hash.label(class="form-label") }}
+        {{ form.password_hash(class="form-control") }} 
+        {{ form.password_hash2.label(class="form-label") }}
+        {{ form.password_hash2(class="form-control") }} 
         <br/>
         {{ form.submit(class="btn btn-primary") }}
     </form>
 <br/><br/><br/>
 <h1>Users that have signed up</h1>
 {% for x in our_users %}
-    {{ x.id }}. {{ x.name }} - {{ x.email }} <br/>
+    {{ x.id }}. {{ x.name }} - {{ x.email }} - {{ x.favorite_food }} <br/>
 {% endfor %}
 {% endif %}
 {% endblock %}

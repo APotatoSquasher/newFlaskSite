@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+{% for message in get_flashed_messages() %} <!--Goes through all messages flashed-->
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endfor %}
+{% if email %}
+    <h1>Email: {{ email }}</h1>
+    <h1>Password: {{ password }}</h1>
+    <br/>
+    <h2>The following info was found</h2>
+    Name: {{ pw_to_check.name }}
+    Password: {{ pw_to_check.password_hash }}
+    <img src="{{ url_for('static',filename='images/mountain.jpg') }}" width=1000>
+    <h2>Passed: {{ passed }}</h2>
+{% else %}
+    <h1>What's Your Email and Password?</h1>
+    <br/>
+    <form method="POST">
+        {{ form.hidden_tag() }} <!-- This makes a form. The POST is to indicate that this is something to submit-->
+        {{ form.email.label(class="form-label") }}
+        {{ form.email(class="form-control") }} <!--Creates the box and submit button below-->
+        {{ form.password_hash.label(class="form-label") }}
+        {{ form.password_hash(class="form-control") }} <!--Creates the box and submit button below-->
+        <br/>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+{% endif %}
+{% endblock %}
