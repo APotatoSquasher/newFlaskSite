@@ -12,9 +12,7 @@
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('info') }}">My Profile</a>
           </li>
-          <li class="nav-item">
-            <a class="nav-link" href="{{ url_for('add_user') }}">Add User</a>
-          </li>
+    
           <li class="nav-item">
             <a class="nav-link" href="{{ url_for('add_post') }}">Add Post</a>
           </li>
@@ -23,13 +21,22 @@
           </li>
           <li class="nav-item dropdown">
             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              Dropdown
+              Profile Settings
             </a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('user',name='John') }}">User Profile</a></li>
               <li><a class="dropdown-item" href="{{ url_for('test_pw') }}">Sign In</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="#">Something else here</a></li>
+              {% if current_user.is_authenticated %}
+                <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log Out</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">View Dashboard</a></li>
+
+              {% else %}
+                <li><a class="dropdown-item" href="{{ url_for('login') }}">Log in</a></li>
+          
+                <li><a class="dropdown-item" href="{{ url_for('add_user') }}">Register</a></li>
+                
+              {% endif %}
             </ul>
           </li>
           <li class="nav-item">

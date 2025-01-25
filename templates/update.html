@@ -15,7 +15,9 @@
     <form action="/update/{{ name_to_update.id }}" method="POST">
         {{ form.hidden_tag() }} <!-- This makes a form. The POST is to indicate that this is something to submit-->
         {{ form.name.label(class="form-label") }}
-        {{ form.name(class="form-control", value=name_to_update.name) }} <!--Creates the box and submit button below-->
+        {{ form.name(class="form-control", value=name_to_update.name) }}
+        {{ form.username.label(class="form-label") }}
+        {{ form.username(class="form-control", value=name_to_update.name) }} <!--Creates the box and submit button below-->
         {{ form.email.label(class="form-label") }}
         {{ form.email(class="form-control",value=name_to_update.email) }}
         {{ form.favorite_food.label(class="form-label") }}

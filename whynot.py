@@ -8,6 +8,7 @@ from datetime import datetime
 from sqlalchemy.inspection import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms.widgets import TextArea
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
 # Creates a Flask Instance
 app = Flask(__name__)
 #Add database
@@ -19,6 +20,45 @@ app.config['SECRET_KEY'] = "test case i know this is public"
 db = SQLAlchemy(app)
 migrate = Migrate(app,db,compare_type=True,render_as_batch=True)
 #Create a Blog Post Model
+#Flask Login Stuff
+login_manager=LoginManager()
+login_manager.init_app(app)
+login_manager.login_view='login' #redirects user to login.html if not logged in
+@login_manager.user_loader
+def load_user(user_id):
+    return Users.query.get(int(user_id))
+#create login page
+class LoginForm(FlaskForm):
+    username=StringField("Username: ",validators=[DataRequired()])
+    password=PasswordField("Password: ",validators=[DataRequired()])
+    submit=SubmitField("Submit")
+@app.route('/login',methods=['GET','POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        user= Users.query.filter_by(username=form.username.data).first() # grab first instance of username in the database from the form
+        if user:
+            #Check the hash
+            if check_password_hash(user.password_hash,form.password.data): # Returns true if the password from the form matcehs the hash
+                login_user(user) #Logs user in
+                return redirect(url_for('dashboard'))
+            else:
+                flash("Password is incorrect. Please try again!")
+        else:
+            flash("That user doesn't exist. Please try again! ")
+    return render_template('login.html',form=form)
+#Create Log Out Page
+@app.route('/logout',methods=['GET','POST'])
+@login_required
+def logout():
+    logout_user() #Flask_login already has a function for logging someone out
+    flash("You have been logged out.")
+    return redirect(url_for('login'))
+@app.route('/dashboard',methods=['GET','POST'])
+@login_required #must be logged in to view dashboard
+def dashboard():
+    form = LoginForm()
+    return render_template('dashboard.html')
 class Posts(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     title = db.Column(db.String(255))
@@ -33,6 +73,21 @@ class PostForm(FlaskForm):
     author=StringField("Author: ",validators=[DataRequired()])
     slug=StringField("Alternate URL: ",validators=[DataRequired()])
     submit=SubmitField("Submit")
+@app.route('/posts/delete/<int:id>')
+@login_required
+def delete_post(id):
+    post_to_delete = Posts.query.get_or_404(id)
+    try:
+        db.session.delete(post_to_delete) #deletes post
+        db.session.commit()
+        posts=Posts.query.order_by(Posts.date_posted)
+        flash("Blog post was deleted.")
+        return render_template('posts.html',posts=posts)
+    except:
+        posts=Posts.query.order_by(Posts.date_posted)
+        flash("Blog does not exist or an error may have occured.")
+        return render_template('posts.html',posts=posts)
+        
 @app.route('/posts')
 def posts():
     # Grab all posts from the database
@@ -43,6 +98,7 @@ def post(id):
     post=Posts.query.get_or_404(id)
     return render_template('post.html',post=post)
 @app.route('/posts/edit/<int:id>',methods=['GET','POST']) #Use the methods when you want to get or submit info
+@login_required
 def edit_post(id):
     post=Posts.query.get_or_404(id)
     form=PostForm()
@@ -64,6 +120,7 @@ def edit_post(id):
     return render_template('edit_post.html',form=form)
 # Add Post Page
 @app.route('/add-post',methods=['GET','POST'])
+@login_required
 def add_post():
     form=PostForm()
     if form.validate_on_submit(): # If all of the forms have info in them, and is submitted, then do...
@@ -79,9 +136,10 @@ def add_post():
     #Redirect to webpage
     return render_template("add_post.html",form=form)
 # Create Model
-class Users(db.Model):
+class Users(db.Model,UserMixin):
     # creates id, name, email, and date for each person. Primary key automatically makes the id
     id= db.Column(db.Integer, primary_key=True)
+    username=db.Column(db.String(20))
     name=db.Column(db.String(200),nullable=False) #200 is the max amount of string. Cannot be nothing as per nullable=False
     email=db.Column(db.String(120),nullable=False,unique=True) #only one email per user allowed due to unique=
     favorite_food=db.Column(db.String(150))
@@ -102,6 +160,7 @@ class Users(db.Model):
 # Creates a Form class
 class UserForm(FlaskForm):
     name=StringField("Name: ",validators=[DataRequired()])
+    username=StringField("Username:",validators=[DataRequired()])
     email=StringField("Email: ",validators=[DataRequired()])
     password_hash = PasswordField("Password: ",validators=[DataRequired(),EqualTo('password_hash2',message='Password Must Match!')])
     password_hash2 = PasswordField("Confirm Password: ",validators=[DataRequired()]) # This doesn't need a EqualTo() because the first one must match with this one
@@ -109,6 +168,7 @@ class UserForm(FlaskForm):
     submit=SubmitField("Submit")
 # Update database
 @app.route('/update/<int:id>',methods=['GET','POST'])
+@login_required
 def update(id): # Is <int:id> in this case
     form = UserForm()
     name_to_update = Users.query.get_or_404(id)
@@ -147,7 +207,7 @@ def add_user():
         if user is None:
             # Hash the password in the sha356 method
             hashed_pw=generate_password_hash(form.password_hash.data,"pbkdf2:sha256")
-            user= Users(name=form.name.data,email=form.email.data,favorite_food=form.favorite_food.data,password_hash=hashed_pw) # sets user to the name and email given
+            user= Users(username=form.username.data,name=form.name.data,email=form.email.data,favorite_food=form.favorite_food.data,password_hash=hashed_pw) # sets user to the name and email given
             db.session.add(user) # adds user to the database
             db.session.commit() # commits it
         else:
@@ -155,12 +215,14 @@ def add_user():
         name = form.name.data 
         form.name.data = "" # Resets the name and email back
         form.email.data = ""
+        form.username.data=""
         form.favorite_food.data = ""
         form.password_hash.data = ""
         flash("Welcome to my blog!")
     our_users= Users.query.order_by(Users.date_added) # Gets a list of users by date added
     return render_template("add_user.html",form=form,name=name,our_users=our_users)
 @app.route('/delete/<int:id>')
+@login_required
 def delete(id): #Taking id from <int:id>
     name=None
     form=UserForm()

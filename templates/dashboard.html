@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+{% for message in get_flashed_messages() %} <!--Goes through all messages flashed-->
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+{% endfor %}
+<h1>Dashboard</h1>
+<br/>
+<div class="card">
+    <div class="card-header">
+        {{ current_user.name }}
+    </div>
+    <div class="card-body">
+      <h5 class="card-title">Your Profile</h5>
+      <p class="card-text"><strong>Name: </strong> {{ current_user.name }}<br/> <!-- Since UserMixin (from flask_login) is connected to the Users database, we can access it's properties-->
+        <strong>Email: </strong> {{ current_user.email }} <br/> <!-- current_user is something imported from flask_login, and has access to the Users database-->
+        <strong>Username: </strong> {{ current_user.username }} <br/>
+        <strong>ID: </strong> {{ current_user.id }} <br/>
+        <strong>Favorite Food: </strong> {{ current_user.favorite_food }} <br/>
+        <strong>Date Joined: </strong> {{ current_user.date_added }} <br/></p>
+      <a href="{{ url_for('logout') }}" class="btn btn-primary btn-sm">Log Out</a>
+      <a href="{{ url_for('update',id=current_user.id) }}" class="btn btn-primary btn-sm">Update Profile</a>
+      <a href="{{ url_for('delete',id=current_user.id) }}" class="btn btn-danger btn-sm">Delete Profile</a>
+
+    </div>
+  </div>
+<br/><br/>
+
+<br/><br/><br/>
+<a href="{{ url_for('logout') }}">Log Out</a>
+{% endblock %}
