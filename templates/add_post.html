@@ -16,8 +16,7 @@
         {{ form.hidden_tag() }} <!-- This makes a form. The POST is to indicate that this is something to submit-->
         {{ form.title.label(class="form-label") }}
         {{ form.title(class="form-control") }} <!--Creates the box and submit button below-->
-        {{ form.author.label(class="form-label") }}
-        {{ form.author(class="form-control") }}
+        
         {{ form.slug.label(class="form-label") }}
         {{ form.slug(class="form-control") }} 
         {{ form.content.label(class="form-label") }}
@@ -25,6 +24,8 @@
         <br/>
         {{ form.submit(class="btn btn-primary") }}
     </form>
+    {{ ckeditor.load() }}
+    {{ ckeditor.config(name='content') }}
 <br/><br/><br/>
 <h1>Users that have signed up</h1>
 {% for x in our_users %}

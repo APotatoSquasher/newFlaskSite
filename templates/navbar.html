@@ -25,12 +25,14 @@
             </a>
             <ul class="dropdown-menu">
               <li><a class="dropdown-item" href="{{ url_for('user',name='John') }}">User Profile</a></li>
-              <li><a class="dropdown-item" href="{{ url_for('test_pw') }}">Sign In</a></li>
+              <li><a class="dropdown-item" href="{{ url_for('test_pw') }}">Check If User Exists</a></li>
               <li><hr class="dropdown-divider"></li>
               {% if current_user.is_authenticated %}
                 <li><a class="dropdown-item" href="{{ url_for('logout') }}">Log Out</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">View Dashboard</a></li>
-
+                {% if current_user.id == 12 %}
+                <li><a class="dropdown-item" href="{{ url_for('admin') }}">Admin</a></li>
+                {% endif %}
               {% else %}
                 <li><a class="dropdown-item" href="{{ url_for('login') }}">Log in</a></li>
           
@@ -43,9 +45,10 @@
             <a class="nav-link disabled" aria-disabled="true">Disabled</a>
           </li>
         </ul>
-        <form class="d-flex" role="search">
-          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-          <button class="btn btn-outline-success" type="submit">Search</button>
+        <form  method="POST" action="{{ url_for('search') }}" class="d-flex">
+          {{ form.hidden_tag() }}
+          <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search",name="searched">
+          <button class="btn btn-outline-success" action="{{ url_for('search') }}" type="submit">Search</button>
         </form>
       </div>
     </div>

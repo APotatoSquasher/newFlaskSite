@@ -13,8 +13,7 @@
         {{ form.hidden_tag() }} <!-- This makes a form. The POST is to indicate that this is something to submit. hidden tag makes a csrf token for security-->
         {{ form.title.label(class="form-label") }}
         {{ form.title(class="form-control") }} <!--Creates the box and submit buttons for each section below-->
-        {{ form.author.label(class="form-label") }}
-        {{ form.author(class="form-control") }}
+    
         {{ form.slug.label(class="form-label") }}
         {{ form.slug(class="form-control") }} 
         {{ form.content.label(class="form-label") }}
@@ -22,5 +21,7 @@
         <br/>
         {{ form.submit(class="btn btn-primary") }}
     </form>
+    {{ ckeditor.load() }}
+    {{ ckeditor.config(name='content') }}
 </div>
 {% endblock %}

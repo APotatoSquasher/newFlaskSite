@@ -6,13 +6,12 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 {% endfor %}
-{% if name %}
+{% if id == current_user.id %}
     <h1>Update User</h1>
     <br/>
-{% else %}
-    <h1>Update User...</h1>
-    <br/>
-    <form action="/update/{{ name_to_update.id }}" method="POST">
+    <h5>ID to Update {{ id }}</h5><br/>
+    <h5>Current Id: {{ current_user.id }}</h5>
+    <form action="/update/{{ name_to_update.id }}" method="POST" enctype="multipart/form-data"> <!-- enctype is for images-->
         {{ form.hidden_tag() }} <!-- This makes a form. The POST is to indicate that this is something to submit-->
         {{ form.name.label(class="form-label") }}
         {{ form.name(class="form-control", value=name_to_update.name) }}
@@ -22,17 +21,23 @@
         {{ form.email(class="form-control",value=name_to_update.email) }}
         {{ form.favorite_food.label(class="form-label") }}
         {{ form.favorite_food(class="form-control", value=name_to_update.favorite_food) }}
+        {{ form.about_author.label(class="form-label") }}
+        <textarea name="about_author" class="form-control">{{ name_to_update.about_author }}</textarea>
+        {{ form.profile_pic.label(class="form-label") }}
+        {{ form.profile_pic(class="form-control", value=name_to_update.profile_pic) }}
         {{ form.password_hash.label(class="form-label") }}
         {{ form.password_hash(class="form-control") }} 
         {{ form.password_hash2.label(class="form-label") }}
         {{ form.password_hash2(class="form-control") }} 
-        <br/>
-        {{ form.submit(class="btn btn-primary") }}
-    </form>
+            <br/>
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+{% else %}
+    <h2>Sorry! You can't edit this page</h2>
+{% endif %}
 <br/><br/><br/>
 <h1>Users that have signed up</h1>
 {% for x in our_users %}
     {{ x.id }}. {{ x.name }} - {{ x.email }} - {{ x.favorite_food }} <br/>
 {% endfor %}
-{% endif %}
 {% endblock %}

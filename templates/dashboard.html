@@ -15,15 +15,31 @@
     <div class="card-body">
       <h5 class="card-title">Your Profile</h5>
       <p class="card-text"><strong>Name: </strong> {{ current_user.name }}<br/> <!-- Since UserMixin (from flask_login) is connected to the Users database, we can access it's properties-->
+          <div class="container">
+            <div class="row">
+              <div class="col-8">
         <strong>Email: </strong> {{ current_user.email }} <br/> <!-- current_user is something imported from flask_login, and has access to the Users database-->
         <strong>Username: </strong> {{ current_user.username }} <br/>
         <strong>ID: </strong> {{ current_user.id }} <br/>
         <strong>Favorite Food: </strong> {{ current_user.favorite_food }} <br/>
+        <strong>About Author: </strong> {{ current_user.about_author }} <br/>
         <strong>Date Joined: </strong> {{ current_user.date_added }} <br/></p>
+        <strong>Profile Pic: </strong> {{ current_user.profile_pic }} <br/>
+
       <a href="{{ url_for('logout') }}" class="btn btn-primary btn-sm">Log Out</a>
       <a href="{{ url_for('update',id=current_user.id) }}" class="btn btn-primary btn-sm">Update Profile</a>
       <a href="{{ url_for('delete',id=current_user.id) }}" class="btn btn-danger btn-sm">Delete Profile</a>
-
+      <br/><br/>
+      </div>
+      <div class="col-4"> <!-- Profile pic logic -->
+        {% if current_user.profile_pic %}
+        <img src="{{ url_for('static',filename='images/' + current_user.profile_pic) }}" width="200" align="right">
+        {% else %}
+        <img src="{{ url_for('static',filename='images/default_profile_pic.jpg') }}" width="200" align="right">
+        {% endif %}
+      </div>
+      </div>
+      </div>
     </div>
   </div>
 <br/><br/>

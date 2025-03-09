@@ -1,24 +1,30 @@
 from flask import Flask, render_template, flash, request, redirect, url_for
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, ValidationError
-from wtforms.validators import DataRequired, EqualTo, Length
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from datetime import datetime
 from sqlalchemy.inspection import inspect
 from werkzeug.security import generate_password_hash, check_password_hash
-from wtforms.widgets import TextArea
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
+from webforms import *
+from flask_ckeditor import CKEditor
+from werkzeug.utils import secure_filename
+import uuid as uuid
+import os
+
 # Creates a Flask Instance
 app = Flask(__name__)
+#Add CKEditor
+ckeditor = CKEditor(app)
 #Add database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:password123!@localhost/our_users'
 
 app.config['SECRET_KEY'] = "test case i know this is public"
+UPLOAD_FOLDER = 'static/images/' # Where the images are stored
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # initalize database
 db = SQLAlchemy(app)
-migrate = Migrate(app,db,compare_type=True,render_as_batch=True)
+migrate = Migrate(app,db,compare_type=False,render_as_batch=True)
 #Create a Blog Post Model
 #Flask Login Stuff
 login_manager=LoginManager()
@@ -27,11 +33,30 @@ login_manager.login_view='login' #redirects user to login.html if not logged in
 @login_manager.user_loader
 def load_user(user_id):
     return Users.query.get(int(user_id))
+#Pass stuff into navbar by putting it into base.html, which includes navbar.html
+@app.context_processor
+def base():
+    form=SearchForm()
+    return dict(form=form)
+#Create Admin Page
+@app.route('/admin')
+@login_required
+def admin():
+    id=current_user.id
+    return render_template("admin.html",id=id)
+@app.route('/search',methods=["POST"])
+def search():
+    form = SearchForm()
+    #Get data from submitted form
+    if form.validate_on_submit():
+        post.searched=form.searched.data
+        #Query the database
+        #posts=posts.filter(Posts.content)
+        return render_template("search.html",form=form,searched=post.searched)
+    else:
+        flash("Please enter a search term!")
+        return "<h11>Invalid form</h1>"
 #create login page
-class LoginForm(FlaskForm):
-    username=StringField("Username: ",validators=[DataRequired()])
-    password=PasswordField("Password: ",validators=[DataRequired()])
-    submit=SubmitField("Submit")
 @app.route('/login',methods=['GET','POST'])
 def login():
     form = LoginForm()
@@ -59,35 +84,69 @@ def logout():
 def dashboard():
     form = LoginForm()
     return render_template('dashboard.html')
+class Users(db.Model,UserMixin):
+    # creates id, name, email, and date for each person. Primary key automatically makes the id
+    id= db.Column(db.Integer, primary_key=True)
+    username=db.Column(db.String(20))
+    name=db.Column(db.String(200),nullable=False) #200 is the max amount of string. Cannot be nothing as per nullable=False
+    email=db.Column(db.String(120),nullable=False,unique=True) #only one email per user allowed due to unique=
+    favorite_food=db.Column(db.String(150))
+    about_author=db.Column(db.Text(500),nullable=True)
+    date_added=db.Column(db.DateTime, default=datetime.now) # puts current date when they fill out the form
+    profile_pic=db.Column(db.String(150),nullable=True)
+    # do password stuff
+    password_hash = db.Column(db.String(120))
+    posts=db.relationship('Posts',backref='poster')
+    # User can have many posts
+    @property
+    def password(self): # We define the password here
+        raise AttributeError('Password is not a readable attributle!')
+    @password.setter
+    def password(self, password): #We take the password to make a hash
+        self.password_hash = generate_password_hash(password)
+    def verify_password(self, password): # It checks if the password is correct
+        return check_password_hash(self.password_hash,password)
+    # Creates a String
+    def __repr__(self):
+        return '<Name %r>' % self.name
+    
 class Posts(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     title = db.Column(db.String(255))
     content = db.Column(db.Text)
-    author = db.Column(db.String(255))
+    #author = db.Column(db.String(255))
     date_posted = db.Column(db.DateTime,default=datetime.now)
     slug=db.Column(db.String(255)) #Changes url from number to a title
+    #Foreign Key to Link Users (refer to primary key)
+    poster_id=db.Column(db.Integer, db.ForeignKey('users.id'))
+    # User can have many posts (one to many posts)
 # Creates a Post Form
-class PostForm(FlaskForm):
-    title=StringField("Title: ",validators=[DataRequired()])
-    content=StringField("Content: ",validators=[DataRequired()],widget=TextArea())
-    author=StringField("Author: ",validators=[DataRequired()])
-    slug=StringField("Alternate URL: ",validators=[DataRequired()])
-    submit=SubmitField("Submit")
+
 @app.route('/posts/delete/<int:id>')
 @login_required
 def delete_post(id):
     post_to_delete = Posts.query.get_or_404(id)
+    pid=current_user.id
     try:
-        db.session.delete(post_to_delete) #deletes post
-        db.session.commit()
+        if pid == post_to_delete.poster.id or post_to_delete == None or pid == 12:
+            try:
+                db.session.delete(post_to_delete) #deletes post
+                db.session.commit()
+                posts=Posts.query.order_by(Posts.date_posted)
+                flash("Blog post was deleted.")
+                return render_template('posts.html',posts=posts)
+            except:
+                posts=Posts.query.order_by(Posts.date_posted)
+                flash("Blog does not exist or an error may have occured.")
+                return render_template('posts.html',posts=posts)
+        else:
+            posts=Posts.query.order_by(Posts.date_posted)
+            flash("Blog does not exist or an error may have occured.")
+            return render_template('posts.html',posts=posts)         
+    except AttributeError:
         posts=Posts.query.order_by(Posts.date_posted)
-        flash("Blog post was deleted.")
-        return render_template('posts.html',posts=posts)
-    except:
-        posts=Posts.query.order_by(Posts.date_posted)
-        flash("Blog does not exist or an error may have occured.")
-        return render_template('posts.html',posts=posts)
-        
+        flash("You cannot delete this post!")
+        return render_template('posts.html',posts=posts)         
 @app.route('/posts')
 def posts():
     # Grab all posts from the database
@@ -105,7 +164,7 @@ def edit_post(id):
     if form.validate_on_submit():
         # Makes title from form to title in database
         post.title=form.title.data
-        post.author=form.author.data
+        #post.author=form.author.data
         post.slug=form.slug.data
         post.content=form.content.data
         # Update Database
@@ -113,21 +172,27 @@ def edit_post(id):
         db.session.commit()
         flash("Post Has Been Updated!")
         return redirect(url_for('posts',id=post.id))
-    form.title.data=post.title # Autofills sections of form from database
-    form.author.data=post.author
-    form.slug.data=post.slug
-    form.content.data=post.content
-    return render_template('edit_post.html',form=form)
+    if current_user.id == post.poster_id or current_user.id == 12:
+        form.title.data=post.title # Autofills sections of form from database
+        #form.author.data=post.author
+        form.slug.data=post.slug
+        form.content.data=post.content
+        return render_template('edit_post.html',form=form)
+    else:
+        flash("You aren't authorized to edit this post.")
+        post=Posts.query.get_or_404(id)
+        return render_template('post.html',post=post)
 # Add Post Page
 @app.route('/add-post',methods=['GET','POST'])
 @login_required
 def add_post():
     form=PostForm()
     if form.validate_on_submit(): # If all of the forms have info in them, and is submitted, then do...
-        post=Posts(title=form.title.data,content=form.content.data,slug=form.slug.data,author=form.author.data) #Makes new row of Posts
+        poster=current_user.id
+        post=Posts(title=form.title.data,content=form.content.data,slug=form.slug.data,poster_id=poster) #Makes new row of Posts
         form.title.data=''
         form.content.data=''
-        form.author.data=''
+        #form.author.data=''
         form.slug.data=''
         #Add post data to database
         db.session.add(post)
@@ -136,36 +201,9 @@ def add_post():
     #Redirect to webpage
     return render_template("add_post.html",form=form)
 # Create Model
-class Users(db.Model,UserMixin):
-    # creates id, name, email, and date for each person. Primary key automatically makes the id
-    id= db.Column(db.Integer, primary_key=True)
-    username=db.Column(db.String(20))
-    name=db.Column(db.String(200),nullable=False) #200 is the max amount of string. Cannot be nothing as per nullable=False
-    email=db.Column(db.String(120),nullable=False,unique=True) #only one email per user allowed due to unique=
-    favorite_food=db.Column(db.String(150))
-    date_added=db.Column(db.DateTime, default=datetime.now) # puts current date when they fill out the form
-    # do password stuff
-    password_hash = db.Column(db.String(120))
-    @property
-    def password(self): # We define the password here
-        raise AttributeError('Password is not a readable attributle!')
-    @password.setter
-    def password(self, password): #We take the password to make a hash
-        self.password_hash = generate_password_hash(password)
-    def verify_password(self, password): # It checks if the password is correct
-        return check_password_hash(self.password_hash,password)
-    # Creates a String
-    def __repr__(self):
-        return '<Name %r>' % self.name
+
 # Creates a Form class
-class UserForm(FlaskForm):
-    name=StringField("Name: ",validators=[DataRequired()])
-    username=StringField("Username:",validators=[DataRequired()])
-    email=StringField("Email: ",validators=[DataRequired()])
-    password_hash = PasswordField("Password: ",validators=[DataRequired(),EqualTo('password_hash2',message='Password Must Match!')])
-    password_hash2 = PasswordField("Confirm Password: ",validators=[DataRequired()]) # This doesn't need a EqualTo() because the first one must match with this one
-    favorite_food = StringField("Favorite Food: ")
-    submit=SubmitField("Submit")
+
 # Update database
 @app.route('/update/<int:id>',methods=['GET','POST'])
 @login_required
@@ -176,24 +214,35 @@ def update(id): # Is <int:id> in this case
         name_to_update.name = request.form['name'] # Getting name and email of the previously submitted form
         name_to_update.email = request.form['email']
         name_to_update.favorite_food = request.form['favorite_food']
-        try:
-            db.session.commit() # Database can submit name_to_update because it accesses Users, the database
+        name_to_update.username=request.form['username']
+        name_to_update.about_author=request.form['about_author']
+        #name_to_update.profile_pic=request.files['profile_pic']
+        # Check for profile picture
+        if request.files['profile_pic']:
+            name_to_update.profile_pic=request.files['profile_pic']
+            # Saves the image
+            #name_to_update.profile_pic.save(os.path.join(app.root_path,'static/images',pic_name))
+            # Grab image name securely
+            pic_filename=secure_filename(name_to_update.profile_pic.filename)
+            # Set UUID, changing name of file
+            pic_name=str(uuid.uuid1())+'_'+pic_filename
+            saver = request.files['profile_pic']
+            #saver.save(os.path.join(app.root_path,'static/images',pic_name))
+
+            name_to_update.profile_pic=pic_name
+            try:
+                db.session.commit() # Database can submit name_to_update because it accesses Users, the database
+                saver.save(os.path.join(app.config['UPLOAD_FOLDER'],pic_name))
+                flash("User Updated Successfully")
+                return render_template("update.html",form=form,name_to_update=name_to_update)
+            except:
+                flash("Error!")
+        else:
+            db.session.commit()
             flash("User Updated Successfully")
-            return render_template("update.html",form=form,name_to_update=name_to_update)
-        except:
-            flash("Error!")
+            return render_template("dashboard.html",form=form,name_to_update=name_to_update)
     else:
-        return render_template("update.html",form=form,name_to_update=name_to_update)
-class PasswordForm(FlaskForm):
-    email= StringField("What is your email? ",validators=[DataRequired()])
-    password_hash=PasswordField("What is your password? ",validators=[DataRequired()])
-    submit=SubmitField("Submit")
-class NamerForm(FlaskForm):
-    # StringField is the box where you type in things. If you didn't fill out the form,
-    # validator will pop up and say you didn't fill out the form, datarequired just checks if you put anything in
-    # submit is a button that sends the info
-    name=StringField("What's Your name?",validators=[DataRequired()])
-    submit=SubmitField("Submit")
+        return render_template("update.html",form=form,name_to_update=name_to_update,id=id)
     #there are many other fields, like BooleanField, DateTimeField, PasswordField, etc.
 # Creates a route decorator
 if __name__ == "__main__":
@@ -224,18 +273,22 @@ def add_user():
 @app.route('/delete/<int:id>')
 @login_required
 def delete(id): #Taking id from <int:id>
-    name=None
-    form=UserForm()
-    our_users= Users.query.order_by(Users.date_added)
-    user_to_delete = Users.query.get_or_404(id) #Retrives row of person by ID
-    try:
-        db.session.delete(user_to_delete) #deletes user
-        db.session.commit()
-        flash("User Deleted Successfully")
-        return render_template('add_user.html',form=form,name=name,our_users=our_users)
-    except:
-        flash("There was a problem. Check if this user actually exists.")
-        return render_template('add_user.html',form=form,name=name,our_users=our_users)
+    if id == current_user.id:
+        name=None
+        form=UserForm()
+        our_users= Users.query.order_by(Users.date_added)
+        user_to_delete = Users.query.get_or_404(id) #Retrives row of person by ID
+        try:
+            db.session.delete(user_to_delete) #deletes user
+            db.session.commit()
+            flash("User Deleted Successfully")
+            return render_template('add_user.html',form=form,name=name,our_users=our_users)
+        except:
+            flash("There was a problem. Check if this user actually exists.")
+            return render_template('add_user.html',form=form,name=name,our_users=our_users)
+    else:
+        flash("You can't delete that user!")
+        return redirect(url_for('dashboard'))
 @app.route('/')
 def index(): #Accessed from the home button and is by default, look in navbar.html (done via {{ url_for('')) }}
     stuff="Homepage"

@@ -12,13 +12,20 @@
     <br/>
     <div class="shadow p-3 mb-5 bg-body rounded">
         <h2>Title: {{ post.title }}</h2><br/>
-        Author: {{ post.author }}<br/>
+        Author: {{ post.poster.name }}<br/>
         Posted: {{ post.date_posted }}<br/>
-        Blog Content: {{ post.content }}<br/>
+        Blog Content: {{ post.content|safe }}<br/>
         <a href="{{ url_for('post',id=post.id) }}" class="btn btn-outline-primary btn-sm">View Post</a>
-        <a href="{{ url_for('edit_post',id=post.id) }}" class="btn btn-outline-primary btn-sm">Edit Post</a>
-        <a href="{{ url_for('delete_post',id=post.id) }}" class="btn btn-outline-danger btn-sm">Delete Post</a>
-
+        {% if post.poster.id == current_user.id or current_user.id==12 %}
+            <a href="{{ url_for('edit_post',id=post.id) }}" class="btn btn-outline-primary btn-sm">Edit Post</a>
+            <a href="{{ url_for('delete_post',id=post.id) }}" class="btn btn-outline-danger btn-sm">Delete Post</a>
+        {% endif %}
+        <br/><br/>
+        {% if post.poster.about_author %}
+            {{post.poster.about_author}}
+        {% else %}
+            Author has no bio
+        {% endif %}
     </div>
 {% endfor %}
 {% endblock %}

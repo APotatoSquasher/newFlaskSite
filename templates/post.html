@@ -10,11 +10,38 @@
 <br>
 <div class="shadow p-3 mb-5 bg-body rounded">
     <h2>{{ post.title }}</h2><br/>
-    Author: {{ post.author }}<br/>
+    Author: {{ post.poster.name }}<br/>
     Posted On: {{ post.date_posted }}<br/><br/>
-    {{ post.content }}<br/>
-    <a href="{{ url_for('edit_post',id=post.id) }}" class="btn btn-outline-primary btn-sm">Edit Post</a>
-    <a href="{{ url_for('delete_post',id=post.id) }}" class="btn btn-outline-danger btn-sm">Delete Post</a>
-
+    {{ post.content|safe }}<br/>
+<div class="card mb-3">
+    <div class="row no-gutters">
+        <div class="col-md-2">
+            {% if post.poster.profile_pic %}
+            <img src="{{ url_for('static',filename='images/' + post.poster.profile_pic) }}" width="150" align="left">
+            {% else %}
+            <img src="{{ url_for('static',filename='images/default_profile.png') }}" width="150" align="left">
+            {% endif %}
+        </div>
+        <div class="col-md-10">
+            <div class="card-body">
+                <h5 class="card-title">
+                    {{ post.poster.name }}
+                </h5>
+                <p class="card-text">
+                    {% if post.poster.about_author %}
+                        {{post.poster.about_author}}
+                    {% else %}
+                        Author has no bio
+                    {% endif %}
+                    <br/><br/>
+                    {% if post.poster.id == current_user.id %}
+                        <a href="{{ url_for('edit_post',id=post.id) }}" class="btn btn-outline-primary btn-sm">Edit Post</a>
+                        <a href="{{ url_for('delete_post',id=post.id) }}" class="btn btn-outline-danger btn-sm">Delete Post</a>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 {% endblock %}

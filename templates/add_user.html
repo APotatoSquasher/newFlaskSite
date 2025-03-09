@@ -22,17 +22,20 @@
         {{ form.email(class="form-control") }}
         {{ form.favorite_food.label(class="form-label") }}
         {{ form.favorite_food(class="form-control") }} 
+        {{ form.about_author.label(class="form-label") }}
+        {{ form.about_author(class="form-control") }}
         {{ form.password_hash.label(class="form-label") }}
         {{ form.password_hash(class="form-control") }} 
         {{ form.password_hash2.label(class="form-label") }}
         {{ form.password_hash2(class="form-control") }} 
+
         <br/>
         {{ form.submit(class="btn btn-primary") }}
     </form>
 <br/><br/><br/>
 <h1>Users that have signed up</h1>
 {% for x in our_users %}
-    {{ x.id }}. <a href="{{ url_for('update', id=x.id) }}">{{ x.name }}</a> - {{ x.email }} - {{ x.favorite_food }} - {{ x.password_hash }}<br/>
+    {{ x.id }}. <a href="{{ url_for('update', id=x.id) }}">{{ x.name }}</a> - {{ x.username }} - {{ x.email }} - {{ x.favorite_food }} - {{ x.password_hash }}<br/>
 {% endfor %}
 {% endif %}
 {% endblock %}
